@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>document.documentElement.className+=" js"</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KiloPad</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: one centered column, like a long terminal session. nav, launch, explore, positions, rules, latest. */
+:root{
+  color-scheme:dark;
+  --bg:#070707; --panel:#0f0f0f; --line:#2a2a2a; --green:#e9ecef; --amber:#c6ff1a; --red:#ff4d4d;
+  --text:#d8dadd; --dim:#8b8f94;
+  --inner:#1a1a1a; --inset:#050505; --ph:#5c5c5c; --ca:#0c0c0c; --sumbg:#101010; --hov:#161616; --onacc:#080808; --bar:#1d1d1d; --gr:233,236,239; --ar:198,255,26;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace; --crt:'Space Grotesk',system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:14px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;background:repeating-linear-gradient(0deg,rgba(0,0,0,.25) 0 1px,transparent 1px 3px)}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:49;background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,.55))}
+a{color:inherit;text-decoration:none}
+.g{color:var(--green)} .a{color:var(--amber)} .r{color:var(--red)} .d{color:var(--dim)}
+.wrap{max-width:960px;margin:0 auto}
+button{font:inherit}
+
+nav{display:flex;align-items:center;gap:26px;padding:20px 0}
+.logo{font-family:var(--crt);font-size:30px;line-height:1;color:var(--green);text-shadow:0 0 10px rgba(var(--gr),.5);letter-spacing:.05em}
+nav .l{display:flex;gap:22px;color:var(--dim)}
+nav .l a:hover{color:var(--green)}
+nav .sp{flex:1}
+.btn{background:transparent;color:var(--green);border:1px solid var(--green);padding:8px 16px;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--green);color:var(--onacc)}
+.btn.fill{background:var(--green);color:var(--onacc);font-weight:700}
+.btn.fill:hover{box-shadow:0 0 18px rgba(var(--gr),.6)}
+
+.hero{padding:64px 0 36px}
+.hero .cmd{color:var(--amber);margin-bottom:14px}
+.cur{display:inline-block;width:.6em;height:1em;background:var(--green);vertical-align:-2px;animation:b 1s steps(2) infinite}
+@keyframes b{50%{opacity:0}}
+h1{font-family:var(--crt);font-weight:400;font-size:clamp(44px,8.4vw,92px);line-height:.95;color:var(--green);text-shadow:0 0 16px rgba(var(--gr),.5);letter-spacing:.01em;text-wrap:balance}
+h1 .tgt{color:var(--amber);text-shadow:0 0 16px rgba(var(--ar),.45)}
+.sub{margin-top:18px;max-width:56ch;color:var(--text)}
+.sub b{color:var(--green);font-weight:500}
+
+.launch{margin-top:30px;border:1px solid var(--line);background:var(--panel);padding:18px}
+.side{display:inline-flex;border:1px solid var(--line);margin-bottom:14px}
+.side button{background:transparent;border:0;color:var(--dim);padding:7px 16px;cursor:pointer}
+.side button[aria-pressed="true"]{background:var(--green);color:var(--onacc);font-weight:700}
+.side button.sh[aria-pressed="true"]{background:var(--amber)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row input{flex:1 1 280px;min-width:0;background:var(--inset);border:1px solid var(--line);color:var(--text);font:inherit;padding:11px 12px;outline:0}
+.row input::placeholder{color:var(--ph)}
+.row input:focus-visible{border-color:var(--green);box-shadow:0 0 0 1px var(--green)}
+.btn:focus-visible,.side button:focus-visible,a:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.lbl{color:var(--dim);font-size:12.5px;margin:14px 0 8px}
+.tp{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mk{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tp button{background:transparent;border:1px solid var(--line);color:var(--text);padding:10px 8px;cursor:pointer;text-align:center;transition:.15s;min-width:0}
+.mk button{background:transparent;border:1px solid var(--line);color:var(--text);padding:10px 8px;cursor:pointer;text-align:center;transition:.15s;min-width:0}
+.tp button b{display:block;font-weight:700}
+.mk button b{display:block;font-weight:700}
+.tp button span{display:block;color:var(--dim);font-size:12.5px}
+.mk button span{display:block;color:var(--dim);font-size:12.5px}
+.tp button:hover{border-color:var(--green)}
+.mk button:hover{border-color:var(--green)}
+.tp button[aria-pressed="true"]{border-color:var(--amber);background:rgba(var(--ar),.1)}
+.mk button[aria-pressed="true"]{border-color:var(--amber);background:rgba(var(--ar),.1)}
+.tp button[aria-pressed="true"] b{color:var(--amber)}
+.mk button[aria-pressed="true"] b{color:var(--amber)}
+.tp button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.mk button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.warn{margin-top:12px;border:1px solid var(--amber);color:var(--amber);padding:9px 12px;font-size:12.5px;background:rgba(var(--ar),.06)}
+.found{margin-top:12px;min-height:22px;color:var(--dim)}
+.found b{color:var(--text);font-weight:500}
+.note{margin-top:8px;color:var(--dim);font-size:12.5px}
+
+h2{font-family:var(--crt);font-weight:400;font-size:34px;line-height:1;color:var(--green);margin-bottom:16px;letter-spacing:.03em}
+section{padding:44px 0 0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.card{border:1px solid var(--line);background:var(--panel);padding:14px;transition:border-color .15s}
+.card:hover{border-color:var(--green)}
+.card .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.card b{font-weight:700;color:var(--text)}
+.card .top{flex-wrap:wrap}
+.tag{white-space:nowrap;font-size:12px;padding:1px 8px;border:1px solid currentColor}
+.card .meta{color:var(--dim);margin-top:4px}
+.bar{height:6px;background:var(--bar);margin-top:12px}
+.bar i{display:block;height:100%;background:var(--green)}
+.card .to{margin-top:6px;font-size:12.5px;color:var(--dim)}
+
+.oi{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:0;border:1px solid var(--line);background:var(--panel)}
+.oi div{padding:16px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0}
+.oi b{display:block;font-family:var(--crt);font-weight:400;font-size:40px;line-height:1;color:var(--green)}
+.oi span{color:var(--dim);font-size:12.5px}
+
+pre.how{border:1px solid var(--line);background:var(--panel);padding:18px;overflow-x:auto;font:inherit;line-height:1.9;color:var(--text)}
+pre.how .k{color:var(--dim)}
+pre.how .v{color:var(--green)}
+pre.how .w{color:var(--amber)}
+pre.how .x{color:var(--red)}
+
+.feed{border:1px solid var(--line);background:var(--panel)}
+.line{display:grid;grid-template-columns:70px 64px 1fr auto;gap:12px;padding:11px 16px;border-bottom:1px solid var(--inner);align-items:baseline}
+.line:last-child{border-bottom:0}
+.line .t{color:var(--dim);font-size:12.5px}
+.line .e{font-weight:700}
+.line .n{min-width:0;overflow-wrap:anywhere}
+.line .v{text-align:right;font-variant-numeric:tabular-nums}
+
+
+.tabs{display:inline-flex;border:1px solid var(--line);margin:18px 0 12px}
+.tabs button{background:transparent;border:0;color:var(--dim);padding:7px 16px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--green);color:var(--onacc);font-weight:700}
+.tabs button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.srch{display:block;width:100%;background:var(--inset);border:1px solid var(--line);color:var(--text);font:inherit;padding:11px 12px;outline:0;margin-bottom:14px}
+.srch:focus-visible{border-color:var(--green);box-shadow:0 0 0 1px var(--green)}
+.srch::placeholder{color:var(--ph)}
+.tbl{border:1px solid var(--line);background:var(--panel);overflow-x:auto}
+.tbl table{width:100%;border-collapse:collapse;min-width:760px}
+.tbl th{color:var(--dim);font-weight:400;text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);font-size:12px;white-space:nowrap}
+.tbl td{padding:12px 14px;border-bottom:1px solid var(--inner);white-space:nowrap;font-variant-numeric:tabular-nums}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tr.off td{opacity:.5}
+.tbl .m b{display:block;font-weight:700;color:var(--text)}
+.tbl .m span{color:var(--dim);font-size:12.5px}
+.chip{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line);padding:3px 8px;color:var(--text);font-size:12.5px}
+.chip button{background:none;border:0;color:var(--dim);cursor:pointer;padding:0;font-size:12px}
+.chip button:hover{color:var(--green)}
+.mini{background:transparent;border:1px solid var(--line);color:var(--text);padding:5px 12px;cursor:pointer;font-size:12.5px;transition:.15s}
+.mini.lg:hover{border-color:var(--green);color:var(--green)}
+.mini.sh:hover{border-color:var(--amber);color:var(--amber)}
+.mini:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.mini:disabled{cursor:not-allowed;opacity:.4}
+.mini:disabled:hover{border-color:var(--line);color:var(--text)}
+.lead{max-width:62ch;color:var(--text)}
+.src{margin-top:12px;color:var(--dim);font-size:12.5px}
+.ca{background:var(--ca);border-bottom:1px solid var(--line);padding:9px 16px;display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--dim);text-align:center}
+.ca b{color:var(--amber);letter-spacing:.08em}
+.ca code{color:var(--green);font:inherit;overflow-wrap:anywhere;word-break:break-all}
+.ca button,.ca a{background:transparent;border:1px solid var(--line);color:var(--text);font:inherit;font-size:12px;padding:3px 9px;cursor:pointer;text-decoration:none}
+@media(max-width:560px){.ca code{font-size:10.5px;word-break:normal;overflow-wrap:normal;white-space:nowrap}}
+.ca button:hover,.ca a:hover{border-color:var(--green);color:var(--green)}
+footer{margin-top:64px;padding:22px 0 40px;border-top:1px solid var(--line);color:var(--dim);font-size:12.5px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+@media (max-width:640px){
+  nav{flex-wrap:wrap;gap:10px 16px;padding:14px 0}
+  nav .l{order:3;width:100%;gap:18px;overflow-x:auto;white-space:nowrap}
+  nav .sp{display:none}
+  nav .btn{margin-left:auto}
+  .hero{padding-top:36px}
+  .line{grid-template-columns:60px 1fr auto}.line .n{grid-column:2/-1;grid-row:2}
+  .line .v{grid-column:3;grid-row:1}
+}
+@media (prefers-reduced-motion:reduce){.cur{animation:none}html{scroll-behavior:auto}}
+
+.hl{background:var(--green);color:var(--inset);text-shadow:none;padding:0 .14em;margin-right:.1em;display:inline-block}
+.ctas{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
+.ctas .btn{padding:11px 20px}
+.lead{max-width:62ch;color:var(--text)}
+.form{margin-top:22px;border:1px solid var(--line);background:var(--panel);padding:20px;display:grid;gap:4px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fld{min-width:0}
+.fld label,.lbl{display:block;color:var(--dim);font-size:12.5px;margin:14px 0 8px}
+.inp{display:block;width:100%;background:var(--inset);border:1px solid var(--line);color:var(--text);font:inherit;padding:11px 12px;outline:0;resize:vertical}
+.inp::placeholder{color:var(--ph)}
+.inp:focus-visible{border-color:var(--green);box-shadow:0 0 0 1px var(--green)}
+.imgrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.thumb{width:56px;height:56px;border:1px dashed var(--line);background:var(--inset) center/cover no-repeat;flex:none}
+.imgrow input[type=file]{color:var(--dim);font:inherit;font-size:12.5px;min-width:0;max-width:100%}
+.sum{margin-top:18px;border:1px solid var(--green);background:var(--sumbg);padding:14px 16px;line-height:1.8}
+.sum .t{color:var(--green);font-weight:700}
+.chk{display:flex;gap:10px;align-items:flex-start;margin-top:16px;color:var(--text);cursor:pointer}
+.chk input{margin-top:4px;accent-color:var(--green);flex:none}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.fill:disabled:hover{box-shadow:none}
+.go{margin-top:16px}
+.steps{display:grid;gap:12px;margin-top:6px}
+.step{border:1px solid var(--line);background:var(--panel);padding:16px 18px;display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start}
+.step i{font-style:normal;font-family:var(--crt);font-size:38px;line-height:1;color:var(--amber)}
+.step b{display:block;color:var(--text)}
+.step span{color:var(--dim)}
+.tbl{border:1px solid var(--line);background:var(--panel);overflow-x:auto}
+.tbl table{width:100%;border-collapse:collapse;min-width:560px}
+.tbl th{color:var(--dim);font-weight:400;text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);font-size:12px;white-space:nowrap}
+.tbl td{padding:12px 14px;border-bottom:1px solid var(--inner);white-space:nowrap;font-variant-numeric:tabular-nums}
+.tbl tr:last-child td{border-bottom:0}
+.sub2{color:var(--dim);font-size:12.5px;margin-top:10px;max-width:70ch}
+ul.risk{list-style:none;border:1px solid var(--line);background:var(--panel);padding:6px 18px}
+ul.risk li{padding:11px 0 11px 18px;border-bottom:1px solid var(--inner);position:relative}
+ul.risk li:last-child{border-bottom:0}
+ul.risk li::before{content:">";position:absolute;left:0;color:var(--amber)}
+ul.risk b{color:var(--text);font-weight:500}
+
+.ov{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:16px}
+.ov[hidden]{display:none}
+.dlg{width:100%;max-width:400px;background:var(--panel);border:1px solid var(--green);box-shadow:0 0 40px rgba(var(--gr),.18);max-height:calc(100% - 16px);overflow:auto}
+.dh{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);color:var(--dim);font-size:12.5px}
+.dh .x{background:none;border:0;color:var(--dim);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px}
+.dh .x:hover{color:var(--green)}
+.dh .x:focus-visible,.wopt:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.db{padding:16px 14px 18px}
+.db p{color:var(--dim);font-size:12.5px;margin-bottom:12px}
+.wopt{display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:1px solid var(--line);color:var(--text);padding:11px 12px;margin-bottom:8px;cursor:pointer;text-align:left;transition:.15s}
+.wopt:hover{border-color:var(--green);background:var(--hov)}
+.wopt i{font-style:normal;width:28px;height:28px;display:grid;place-items:center;background:var(--green);color:var(--inset);font-weight:700;flex:none}
+.wopt span{flex:1}
+.wopt em{font-style:normal;color:var(--dim);font-size:12px}
+.acct{border:1px solid var(--line);background:var(--inset);padding:12px 14px;margin-bottom:12px}
+.acct .a1{color:var(--dim);font-size:12.5px}
+.acct .a2{color:var(--green);font-size:16px;margin-top:2px;overflow-wrap:anywhere}
+.acct .a3{color:var(--dim);font-size:12.5px;margin-top:4px}
+.drow{display:flex;gap:10px}
+.drow .btn{flex:1}
+.btn.red{border-color:var(--red);color:var(--red)}
+.btn.red:hover{background:var(--red);color:var(--onacc)}
+.cn{color:var(--text);padding:10px 0 4px}
+@media (max-width:640px){.two{grid-template-columns:1fr}}
+
+.card img.av{width:22px;height:22px;object-fit:cover;vertical-align:middle;margin-right:8px;border:1px solid var(--line)}
+.found a{color:var(--green)}
+.note a.addr{color:var(--green);overflow-wrap:anywhere;word-break:break-all}
+.found .err{color:var(--red)}
+.wopt[disabled]{opacity:.45;cursor:default}
+.wopt[disabled]:hover{border-color:var(--line);background:transparent}
+
+/* ---- KiloPad style tweaks: sharper, heavier, no CRT ---- */
+body::before,body::after{display:none}
+body{font-size:13.5px;line-height:1.65}
+.logo{font-weight:700;font-size:26px;letter-spacing:-.03em;text-shadow:none;color:var(--text)}
+.logo span{color:var(--amber)}
+h1{font-weight:700;font-size:clamp(40px,7.4vw,88px);line-height:1;letter-spacing:-.035em;text-shadow:none}
+h1 .tgt{text-shadow:none}
+h2{font-weight:700;font-size:30px;letter-spacing:-.025em;text-transform:none}
+.oi b,.step i{font-weight:700;letter-spacing:-.03em}
+.step i{font-size:34px}
+.hl{background:var(--amber);color:#080808;padding:0 .16em;border-radius:6px}
+.btn,.side,.tabs,.launch,.form,.card,.step,.tbl,.feed,.oi,pre.how,ul.risk,.sum,.dlg,.acct,.wopt,.inp,.row input,.srch,.tp button,.mk button,.chip,.mini,.warn,.ca a,.ca button,.thumb{border-radius:8px}
+.side button,.tabs button{border-radius:6px}
+.side,.tabs{padding:3px}
+.btn{font-weight:500;padding:9px 18px}
+.btn.fill{background:var(--amber);border-color:var(--amber);color:#080808;font-weight:700}
+.btn.fill:hover{box-shadow:0 0 0 3px rgba(var(--ar),.25);background:var(--amber)}
+.btn:not(.fill):not(.red):hover{background:var(--green);color:#080808}
+nav .l a:hover{color:var(--amber)}
+.hero .cmd{color:var(--dim)}
+.hero .cmd::before{content:"";display:inline-block;width:8px;height:8px;background:var(--amber);border-radius:50%;margin-right:10px;vertical-align:1px}
+.cur{background:var(--amber)}
+.sub b{color:var(--amber)}
+.tag{border-radius:999px;padding:1px 10px}
+.bar{height:5px;border-radius:99px;overflow:hidden}
+.bar i{background:var(--green)}
+.step{border-left:3px solid var(--amber)}
+.step i{color:var(--amber)}
+.card:hover{border-color:var(--amber)}
+.tp button[aria-pressed="true"],.mk button[aria-pressed="true"]{border-color:var(--amber);background:rgba(var(--ar),.08)}
+.tp button[aria-pressed="true"] b,.mk button[aria-pressed="true"] b{color:var(--amber)}
+.side button[aria-pressed="true"],.tabs button[aria-pressed="true"]{background:var(--green);color:#080808}
+.side button.sh[aria-pressed="true"]{background:var(--amber)}
+.row input:focus-visible,.inp:focus-visible,.srch:focus-visible{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber)}
+.sum{border-color:var(--amber)}
+.sum .t,.line .e.g,.found a,.note a.addr,.acct .a2{color:var(--amber)}
+.ca{font-size:12px;border-bottom:1px solid var(--line)}
+.ca b{color:var(--amber)}
+.ca code{color:var(--text)}
+.dlg{box-shadow:0 20px 60px rgba(0,0,0,.6);border-color:var(--line)}
+.wopt i{border-radius:6px;background:var(--amber);color:#080808}
+footer{border-top:1px solid var(--line)}
+.tbl th{letter-spacing:.06em}
+
+/* ---- POP: motion + extra design elements ---- */
+html,body{overflow-x:clip}
+.bgfx{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.bgfx .grid{position:absolute;inset:-60px;background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:60px 60px;animation:gridmove 14s linear infinite;-webkit-mask-image:radial-gradient(ellipse at 50% 20%,#000 20%,transparent 75%);mask-image:radial-gradient(ellipse at 50% 20%,#000 20%,transparent 75%)}
+@keyframes gridmove{to{transform:translate(60px,60px)}}
+.bgfx .orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.35;animation:drift 18s ease-in-out infinite alternate}
+.bgfx .o1{width:520px;height:520px;background:var(--amber);left:55%;top:-160px;opacity:.16}
+.bgfx .o2{width:420px;height:420px;background:#7d8bff;left:-120px;top:40vh;opacity:.10;animation-duration:22s}
+@keyframes drift{to{transform:translate(-80px,90px) scale(1.15)}}
+.coins i{position:absolute;bottom:-40px;width:22px;height:22px;border-radius:50%;border:2px solid var(--amber);opacity:0;animation:rise linear infinite}
+.coins i::after{content:"";position:absolute;inset:5px;border-radius:50%;border:1.5px solid var(--green);opacity:.7}
+@keyframes rise{0%{transform:translateY(0) rotate(0);opacity:0}10%{opacity:.5}90%{opacity:.25}100%{transform:translateY(-110vh) rotate(360deg);opacity:0}}
+
+.logo{display:inline-flex;align-items:center;gap:9px}
+.logo svg{width:28px;height:28px;flex:none;filter:drop-shadow(0 0 8px rgba(var(--ar),.35))}
+
+.hero{padding:56px 0 30px;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:36px;align-items:center}
+.hero h1{font-size:clamp(40px,5.6vw,66px)}
+.hero .cmd{display:inline-flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:999px;padding:5px 14px 5px 12px;margin-bottom:18px;color:var(--dim);font-size:12.5px}
+.hero .cmd::before{display:none}
+.live{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 0 rgba(var(--ar),.7);animation:ping 1.8s infinite}
+@keyframes ping{70%{box-shadow:0 0 0 10px rgba(var(--ar),0)}100%{box-shadow:0 0 0 0 rgba(var(--ar),0)}}
+.shine{background:linear-gradient(100deg,var(--amber) 30%,#f4ffb0 50%,var(--amber) 70%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shine 3.6s ease-in-out infinite;text-shadow:none}
+@keyframes shine{0%{background-position:120% 0}60%,100%{background-position:-120% 0}}
+.hero .ctas .btn.fill{position:relative;overflow:hidden}
+.hero .ctas .btn.fill::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);animation:sweep 3.2s ease-in-out infinite}
+@keyframes sweep{0%,55%{left:-60%}100%{left:130%}}
+
+/* demo card */
+.demo{position:relative;border:1px solid var(--line);border-radius:16px;background:linear-gradient(160deg,#101010,#0a0a0a);padding:16px 16px 14px;box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 1px rgba(var(--ar),.06);overflow:hidden}
+.demo::before{content:"";position:absolute;inset:-1px;border-radius:16px;padding:1px;background:conic-gradient(from var(--ang,0deg),rgba(var(--ar),.7),transparent 30%,transparent 70%,rgba(var(--ar),.7));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:spin 6s linear infinite;pointer-events:none}
+@property --ang{syntax:'<angle>';inherits:false;initial-value:0deg}
+@keyframes spin{to{--ang:360deg}}
+.dh2{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--dim);margin-bottom:14px}
+.dh2 .dots{display:flex;gap:5px}.dh2 .dots i{width:8px;height:8px;border-radius:50%;background:#2a2a2a}
+.drow2{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--dim)}
+.drow2 b{color:var(--text);font-variant-numeric:tabular-nums;font-size:20px;font-family:var(--crt);letter-spacing:-.02em}
+.dbar{height:10px;border-radius:99px;background:#1a1a1a;margin:8px 0 14px;overflow:hidden;position:relative}
+.dbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7d8bff,var(--amber));border-radius:99px;box-shadow:0 0 14px rgba(var(--ar),.6)}
+.dpos{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;min-height:30px;opacity:0;transform:translateY(8px) scale(.96);transition:.45s cubic-bezier(.2,1.4,.4,1)}
+.dpos.on{opacity:1;transform:none}
+.pill{border:1px solid var(--amber);color:var(--amber);border-radius:999px;padding:3px 12px;font-size:12px;font-weight:700;background:rgba(var(--ar),.08)}
+.pill.s{border-color:var(--line);color:var(--text);background:transparent;font-weight:500}
+.dchart{position:relative;height:132px;border-radius:10px;background:#0b0b0b;border:1px solid #1b1b1b;overflow:hidden}
+.dchart>svg{width:100%;height:100%;display:block}
+.dchart .lbl2{position:absolute;right:8px;font-size:10.5px;letter-spacing:.06em}
+.dchart .tp{top:6px;color:var(--amber)}.dchart .bu{bottom:6px;color:var(--red)}
+.dpath{fill:none;stroke:var(--green);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1}
+.ddot{fill:var(--amber);opacity:0}
+.dres{position:absolute;inset:0;display:grid;place-items:center;text-align:center;background:rgba(7,7,7,.82);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .35s}
+.dres.on{opacity:1}
+.dres .big{font-family:var(--crt);font-weight:700;font-size:34px;letter-spacing:-.03em;line-height:1}
+.dres.win .big{color:var(--amber);text-shadow:0 0 22px rgba(var(--ar),.7)}
+.dres.bust .big{color:var(--red)}
+.dres small{display:block;color:var(--dim);margin-top:8px;font-size:12px;max-width:30ch;margin-inline:auto}
+.flame{display:block;margin:0 auto 2px;width:28px;height:28px}
+.dres.on.win .flame{animation:flick .5s ease-in-out infinite alternate}
+@keyframes flick{to{transform:scale(1.12) translateY(-2px);filter:drop-shadow(0 0 8px var(--amber))}}
+.spark{position:absolute;bottom:30%;width:4px;height:4px;border-radius:50%;background:var(--amber);opacity:0}
+.dres.on.win .spark{animation:spark 1.4s ease-out infinite}
+@keyframes spark{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:translate(var(--x),-90px)}}
+.dnote{margin-top:10px;font-size:11px;color:#5d5d5d;text-align:center}
+
+/* ticker */
+.ticker{margin-top:26px;border-block:1px solid var(--line);margin-inline:calc(50% - 50vw);overflow:hidden;background:rgba(255,255,255,.02);padding:11px 0;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.ticker .tr{display:flex;width:max-content;gap:34px;animation:marq 38s linear infinite;font-size:13px;color:var(--dim);letter-spacing:.04em;white-space:nowrap}
+.ticker .tr span b{color:var(--amber);font-weight:700}
+.ticker .tr span::after{content:"/";margin-left:34px;color:#333}
+@keyframes marq{to{transform:translateX(-50%)}}
+.ticker:hover .tr{animation-play-state:paused}
+
+/* stats strip */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:34px}
+.stat{position:relative;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:18px 18px 16px;overflow:hidden}
+.stat::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:100%;background:linear-gradient(90deg,var(--amber),transparent);transform:scaleX(0);transform-origin:left;transition:transform 1.2s .2s}
+.stat.in::after{transform:scaleX(1)}
+.stat b{display:block;font-family:var(--crt);font-size:clamp(30px,5vw,46px);letter-spacing:-.04em;line-height:1;color:var(--amber);text-shadow:0 0 22px rgba(var(--ar),.35);font-variant-numeric:tabular-nums}
+.stat span{display:block;margin-top:8px;color:var(--dim);font-size:12.5px}
+
+/* reveal */
+.js .rv{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1);transition-delay:var(--d,0s)}
+.js .rv.in{opacity:1;transform:none}
+.step{transition:transform .25s,border-color .25s,box-shadow .25s;position:relative}
+.step:hover{transform:translateY(-3px);box-shadow:0 14px 40px rgba(0,0,0,.5),0 0 0 1px rgba(var(--ar),.35)}
+.step i{display:grid;place-items:center;width:46px;height:46px;border:1px solid rgba(var(--ar),.5);border-radius:12px;background:rgba(var(--ar),.07);font-size:26px;box-shadow:0 0 20px rgba(var(--ar),.15)}
+.tbl tbody tr{transition:background .2s}.tbl tbody tr:hover{background:rgba(var(--ar),.06)}
+.card{transition:transform .25s,border-color .25s,box-shadow .25s}.card:hover{transform:translateY(-4px);box-shadow:0 14px 36px rgba(0,0,0,.5)}
+.bar i{background:linear-gradient(90deg,#7d8bff,var(--amber));box-shadow:0 0 10px rgba(var(--ar),.4)}
+
+/* CTA band */
+.cta-band{position:relative;margin-top:64px;border-radius:20px;background:var(--amber);color:#080808;padding:44px 28px;overflow:hidden;text-align:center}
+.cta-band::before{content:"1000x 1000x 1000x 1000x 1000x 1000x";position:absolute;inset:auto 0 -26px 0;font-family:var(--crt);font-weight:700;font-size:120px;letter-spacing:-6px;white-space:nowrap;color:rgba(0,0,0,.07);animation:slide 30s linear infinite}
+@keyframes slide{to{transform:translateX(-30%)}}
+.cta-band h2{position:relative;color:#080808;font-size:clamp(30px,5vw,48px);margin-bottom:8px}
+.cta-band p{position:relative;max-width:52ch;margin:0 auto 20px;color:#1c1c1c}
+.cta-band .btn{position:relative;background:#080808;color:var(--amber);border-color:#080808;padding:12px 26px;font-weight:700}
+.cta-band .btn:hover{background:#080808;color:#fff;transform:translateY(-2px);box-shadow:0 12px 30px rgba(0,0,0,.4)}
+.cta-band .btn span{display:inline-block;transition:transform .2s}.cta-band .btn:hover span{transform:translateX(5px)}
+
+@media (max-width:820px){.hero{grid-template-columns:1fr;padding-top:30px}.stats{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.bgfx .grid,.bgfx .orb,.coins i,.live,.shine,.ticker .tr,.demo::before,.cta-band::before,.hero .ctas .btn.fill::after{animation:none}.js .rv{opacity:1;transform:none;transition:none}.shine{-webkit-text-fill-color:var(--amber);background:none}}
+</style>
+</head>
+<body>
+<div class="bgfx" aria-hidden="true"><div class="grid"></div><div class="orb o1"></div><div class="orb o2"></div><div class="coins"><i style="left:6%;animation-duration:19s;animation-delay:-2s;width:18px;height:18px"></i><i style="left:14%;animation-duration:26s;animation-delay:-9s;width:26px;height:26px"></i><i style="left:24%;animation-duration:22s;animation-delay:-14s;width:16px;height:16px"></i><i style="left:37%;animation-duration:30s;animation-delay:-5s;width:22px;height:22px"></i><i style="left:48%;animation-duration:24s;animation-delay:-18s;width:14px;height:14px"></i><i style="left:58%;animation-duration:28s;animation-delay:-11s;width:24px;height:24px"></i><i style="left:69%;animation-duration:21s;animation-delay:-4s;width:18px;height:18px"></i><i style="left:78%;animation-duration:32s;animation-delay:-20s;width:28px;height:28px"></i><i style="left:88%;animation-duration:23s;animation-delay:-8s;width:16px;height:16px"></i><i style="left:95%;animation-duration:27s;animation-delay:-15s;width:20px;height:20px"></i></div></div>
+<div class="ca"><b>CA</b><code id="ca">Coming soon</code></div>
+
+
+<div class="wrap">
+  <nav>
+    <a class="logo" href="#"><svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0b0b0b" stroke="#2a2a2a"/><g transform="translate(-7.5 -11.5) scale(.075)" fill="#e9ecef"><rect x="300" y="260" width="110" height="504"/><polygon points="600,260 735,260 400,660 400,500"/><polygon points="620,764 755,764 470,430 400,510"/></g><rect x="15" y="51" width="34" height="3.5" rx="1.75" fill="#c6ff1a"/></svg><b style="font-weight:700">KILO<span>PAD</span></b></a>
+    <div class="l"><a href="#/launch">Launch</a><a href="#/how">How it works</a><a href="#/docs">Docs</a><a href="#explore">Explore</a><a href="https://x.com/kilopadsol" target="_blank" rel="noopener">X</a></div>
+    <div class="sp"></div>
+    <button class="btn" id="wallet">Connect wallet</button>
+  </nav>
+
+  <!-- HOME -->
+  <div id="p-home">
+    <header class="hero">
+      <div class="hl-col">
+        <div class="cmd"><span class="live"></span>fees go all-in at 1000x</div>
+        <h1><span class="hl">Launch a coin.</span> Fees go <span style="white-space:nowrap">all-in</span> at <span class="tgt shine">1000x</span></h1>
+        <p class="sub">Pick SOL, BTC or ETH. Its creator fees open a <b>1000x</b> long or short on Jupiter YOLO. Win and the profit buys your coin back and <b>burns</b> it.</p>
+        <div class="ctas"><a class="btn fill" href="#/launch">Launch a coin</a><a class="btn" href="#/how">How it works</a></div>
+      </div>
+      <div class="demo" id="demo" aria-hidden="true">
+        <div class="dh2"><span class="dots"><i></i><i></i><i></i></span><span id="dtitle">one coin, one bet</span></div>
+        <div class="drow2"><span>Creator fees</span><span><b id="dv">$0.00</b> / $50</span></div>
+        <div class="dbar"><i id="dbar"></i></div>
+        <div class="dpos" id="dpos"><span class="pill">LONG SOL</span><span class="pill">1000x</span><span class="pill s">$50 margin → $50,000</span></div>
+        <div class="dchart">
+          <svg viewBox="0 0 360 132" preserveAspectRatio="none"><line x1="0" y1="26" x2="360" y2="26" stroke="#c6ff1a" stroke-opacity=".5" stroke-dasharray="4 5"/><line x1="0" y1="108" x2="360" y2="108" stroke="#ff4d4d" stroke-opacity=".5" stroke-dasharray="4 5"/><path id="dpath" class="dpath" pathLength="1" d="M0 70"/><circle id="ddot" class="ddot" r="5" cx="0" cy="70"/></svg>
+          <span class="lbl2 tp">TAKE PROFIT</span><span class="lbl2 bu">BUST</span>
+          <div class="dres" id="dres"><i class="spark" style="left:40%;--x:-42px;animation-delay:0.0s"></i><i class="spark" style="left:44%;--x:-28px;animation-delay:0.18s"></i><i class="spark" style="left:48%;--x:-14px;animation-delay:0.36s"></i><i class="spark" style="left:52%;--x:0px;animation-delay:0.54s"></i><i class="spark" style="left:56%;--x:14px;animation-delay:0.72s"></i><i class="spark" style="left:60%;--x:28px;animation-delay:0.8999999999999999s"></i><i class="spark" style="left:64%;--x:42px;animation-delay:1.08s"></i><div><svg class="flame" viewBox="0 0 32 32"><path d="M16 3c1 6 8 8 8 16a8 8 0 0 1-16 0c0-4 2-6 4-8 0 3 2 4 3 4 1-4-1-8 1-12z" fill="#c6ff1a"/><path d="M16 15c.6 3 4 4 4 8a4 4 0 0 1-8 0c0-2 1-3 2-4 0 1.5 1 2 1.5 2 .5-2-.5-4.5.5-6z" fill="#070707"/></svg><div class="big" id="dbig">WIN</div><small id="dsm"></small></div></div>
+        </div>
+        <div class="dnote">Illustration of the loop. Not live data.</div>
+      </div>
+    </header>
+    <div class="ticker" aria-hidden="true"><div class="tr" id="tick"></div></div>
+    <div class="stats">
+      <div class="stat rv"><b data-n="50" data-p="$">$0</b><span>of creator fees opens a position</span></div>
+      <div class="stat rv" style="--d:.1s"><b data-n="50000" data-p="$">$0</b><span>position size at 1000x</span></div>
+      <div class="stat rv" style="--d:.2s"><b data-n="80" data-s="%">0%</b><span>of a win burns your coin</span></div>
+    </div>
+
+    <section id="how">
+      <h2 class="rv">How it works</h2>
+      <div class="steps">
+        <div class="step rv"><i>1</i><div><b>Launch.</b><span>Pick SOL, BTC or ETH, long or short, and a take-profit tier. Those are locked in for the life of the coin.</span></div></div>
+        <div class="step rv"><i>2</i><div><b>Fees stack up.</b><span>Every trade of your coin pays creator fees. They collect until they reach $50.</span></div></div>
+        <div class="step rv"><i>3</i><div><b>The position opens.</b><span>$50 of margin opens a $50,000 position at 1000x, on the side you picked.</span></div></div>
+        <div class="step rv"><i>4</i><div><b>Win and it burns.</b><span>Hit your take profit and 80% of the profit buys your coin back and burns it. The other 20% buys back and burns KILOPAD.</span></div></div>
+      </div>
+      <div class="tbl" style="margin-top:22px"><table>
+        <thead><tr><th>TIER</th><th>CLOSES AT</th><th>PRICE MOVE YOUR WAY</th><th>PROFIT ON $50</th></tr></thead>
+        <tbody>
+          <tr><td class="a">Degen</td><td>2x margin</td><td>0.1%</td><td class="g">$50</td></tr>
+          <tr><td class="a">Hyper-Degen</td><td>10x margin</td><td>0.9%</td><td class="g">$450</td></tr>
+          <tr><td class="a">Psycho</td><td>100x margin</td><td>9.9%</td><td class="g">$4,950</td></tr>
+        </tbody>
+      </table></div>
+      <div class="ctas" style="margin-top:22px"><a class="btn" href="#/how">Read the full guide</a></div>
+    </section>
+
+    <section id="explore">
+      <h2 class="rv">Explore</h2>
+      <div class="cards" id="cards"><p class="d">Loading…</p></div>
+    </section>
+
+    <section id="latest">
+      <h2 class="rv">Latest</h2>
+      <div class="feed" id="feed"><p class="d">Loading…</p></div>
+    </section>
+
+    <section><div class="cta-band rv"><h2>Launch a coin. Go all-in.</h2><p>Pick a market, a side and a tier. Every trade of your coin stacks fees toward a 1000x position.</p><a class="btn" href="#/launch">Launch a coin <span>&rarr;</span></a></div></section>
+  </div>
+
+  <!-- LAUNCH -->
+  <div id="p-launch" hidden>
+    <section style="padding-top:36px">
+      <h2>Launch a coin</h2>
+      <p class="lead">Name it, pick a market and a side, then choose when it takes profit and burns. All creator fees go into the position.</p>
+      <div class="form">
+        <div class="two">
+          <div class="fld"><label for="nm">Coin name</label><input class="inp" id="nm" maxlength="32" autocomplete="off" placeholder="Hopium"></div>
+          <div class="fld"><label for="tk">Ticker</label><input class="inp" id="tk" maxlength="8" autocomplete="off" spellcheck="false" placeholder="HOPIUM"></div>
+        </div>
+        <div class="fld"><label for="img">Image</label>
+          <div class="imgrow"><div class="thumb" id="thumb"></div><input type="file" id="img" accept="image/*"></div></div>
+        <div class="fld"><label for="ds">Description (optional)</label><textarea class="inp" id="ds" rows="2" maxlength="140" placeholder="One line. Keep it degenerate."></textarea></div>
+
+        <div class="fld"><label for="db2">Initial buy in SOL (optional, needs a second approval)</label><input class="inp" id="db2" inputmode="decimal" value="0.01" autocomplete="off"></div>
+        <div class="lbl">Side</div>
+        <div class="side" role="group" aria-label="Position side">
+          <button id="sl" aria-pressed="true">LONG</button><button id="ss" class="sh" aria-pressed="false">SHORT</button>
+        </div>
+        <div class="lbl">Market</div>
+        <div class="mk" role="group" aria-label="Market">
+          <button data-sym="SOL" aria-pressed="true"><b>SOL</b><span>$104.42</span></button>
+          <button data-sym="BTC" aria-pressed="false"><b>BTC</b><span>$81,556</span></button>
+          <button data-sym="ETH" aria-pressed="false"><b>ETH</b><span>$2,422.50</span></button>
+        </div>
+        <div class="lbl">Take profit and burn</div>
+        <div class="tp" role="group" aria-label="Take profit and burn">
+          <button data-x="2" aria-pressed="true"><b>Degen</b><span>2x</span></button>
+          <button data-x="10" aria-pressed="false"><b>Hyper-Degen</b><span>10x</span></button>
+          <button data-x="100" aria-pressed="false"><b>Psycho</b><span>100x</span></button>
+        </div>
+        <div class="note" id="tpnote"></div>
+
+        <div class="sum" id="sum" aria-live="polite"></div>
+
+        <div class="note" id="tnote">Creator fees from this coin go to the KILOPAD treasury. That is set on-chain in the same transaction as your launch and cannot be changed afterward.</div>
+        <label class="chk"><input type="checkbox" id="ok"><span>I understand that positions are not live yet, that Jupiter YOLO is an unaudited beta, and that profits can queue or never pay out.</span></label>
+        <div class="go"><button class="btn fill" id="go" disabled>Launch coin</button></div>
+        <div class="found" id="found" aria-live="polite"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div id="p-how" hidden>
+    <section style="padding-top:36px">
+      <h2>How it works</h2>
+      <p class="lead">One coin, one bet at a time. Its creator fees are the margin, a 1000x long or short on SOL, BTC or ETH is the bet, and a win burns supply.</p>
+    </section>
+
+    <section>
+      <h2>The loop</h2>
+      <div class="steps">
+        <div class="step rv"><i>1</i><div><b>Launch.</b><span>Pick SOL, BTC or ETH, long or short, and a take-profit tier. Those are locked in for the life of the coin.</span></div></div>
+        <div class="step rv"><i>2</i><div><b>Fees stack up.</b><span>Every trade of your coin pays creator fees. They collect until they reach $50.</span></div></div>
+        <div class="step rv"><i>3</i><div><b>The position opens.</b><span>$50 of margin opens a $50,000 position on Jupiter YOLO at 1000x, on the side you picked.</span></div></div>
+        <div class="step rv"><i>4</i><div><b>Win or bust.</b><span>If the price reaches your take profit, the bot closes the position. 80% of the profit buys your coin back and burns it, and 20% buys back and burns KILOPAD.</span></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Take profit tiers</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>TIER</th><th>CLOSES AT</th><th>PRICE MOVE YOUR WAY</th><th>ROUGH ODDS BEFORE BUST</th><th>PROFIT ON $50</th></tr></thead>
+        <tbody>
+          <tr><td class="a">Degen</td><td>2x margin</td><td>0.1%</td><td>1 in 2</td><td class="g">$50</td></tr>
+          <tr><td class="a">Hyper-Degen</td><td>10x margin</td><td>0.9%</td><td>1 in 10</td><td class="g">$450</td></tr>
+          <tr><td class="a">Psycho</td><td>100x margin</td><td>9.9%</td><td>1 in 100</td><td class="g">$4,950</td></tr>
+        </tbody>
+      </table></div>
+      <p class="sub2">Odds assume a fair coin flip and ignore fees, spread and slippage, all of which make them worse. Profit is what gets used for the buyback and burn.</p>
+    </section>
+
+    <section>
+      <h2>Where a position busts</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>MARKET</th><th>DEMO PRICE</th><th>LONG BUSTS AT</th><th>SHORT BUSTS AT</th></tr></thead>
+        <tbody>
+          <tr><td>SOL</td><td>$104.42</td><td class="r">$104.32</td><td class="r">$104.52</td></tr>
+          <tr><td>BTC</td><td>$81,556</td><td class="r">$81,474</td><td class="r">$81,638</td></tr>
+          <tr><td>ETH</td><td>$2,422.50</td><td class="r">$2,420.08</td><td class="r">$2,424.92</td></tr>
+        </tbody>
+      </table></div>
+      <p class="sub2">At 1000x the bust price is 0.1% from entry. Normal price noise can do that in seconds.</p>
+    </section>
+
+    <section>
+      <h2>The potential</h2>
+      <ul class="risk">
+        <li><b>Every coin is its own bet.</b> Pick SOL, BTC or ETH, long or short, and a take-profit tier. Each coin plays its own game from day one.</li>
+        <li><b>Trading volume does the funding.</b> Every trade of your coin pays creator fees, and they stack up on their own until they reach $50. No one has to put in extra money to open the position.</li>
+        <li><b>One win can be huge.</b> $50 of margin runs as a $50,000 position at 1000x. A Psycho win is $4,950 of profit: 80% buys and burns your coin, 20% buys and burns KILOPAD.</li>
+        <li><b>Wins burn supply for good.</b> 80% of the profit buys the coin back from the market and burns it, so a win means more demand and less supply at the same time. The other 20% buys back and burns KILOPAD.</li>
+        <li><b>The bigger the bet, the bigger the story.</b> Degen, Hyper-Degen and Psycho are three different ways to play it, and every coin that picks the high-risk path gives holders something to watch.</li>
+        <li><b>It keeps going.</b> Fees keep stacking after every position, so a coin gets another shot at the next $50.</li>
+      </ul>
+    </section>
+    <div class="ctas" style="margin-top:34px"><a class="btn fill" href="#/launch">Launch a coin</a></div>
+  </div>
+
+
+  <!-- DOCS -->
+  <div id="p-docs" hidden>
+    <section style="padding-top:36px">
+      <h2>Docs</h2>
+      <p class="lead">How KiloPad works, start to finish: what happens when you launch a coin, where the fees go, how the 1000x position works, and what is and is not live yet.</p>
+      <div class="docs-toc" style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap"><a class="chip" href="#/docs/overview">Overview</a> <a class="chip" href="#/docs/loop">The loop</a> <a class="chip" href="#/docs/launch">Launching a coin</a> <a class="chip" href="#/docs/fees">Fee lock</a> <a class="chip" href="#/docs/position">The position</a> <a class="chip" href="#/docs/tiers">Tiers and odds</a> <a class="chip" href="#/docs/win">Win: buyback and burn</a> <a class="chip" href="#/docs/bust">Bust</a> <a class="chip" href="#/docs/explore">Explore and fee progress</a> <a class="chip" href="#/docs/status">What is live</a> <a class="chip" href="#/docs/risks">Risks</a> <a class="chip" href="#/docs/faq">FAQ</a> </div>
+    </section>
+<section id="d-overview"><h2>Overview</h2><p class="lead" style="margin-bottom:12px">KiloPad is a launchpad for pump.fun coins with one extra rule. Every coin&#39;s creator fees are locked to the KiloPad treasury, and when a coin&#39;s fees reach <b>$50</b>, they open a <b>1000x</b> long or short on SOL, BTC or ETH.</p><p class="lead" style="margin-bottom:12px">If the position wins, the profit buys the coin back from the market and burns it. If it busts, the coin keeps trading and its fees start stacking toward the next $50.</p><p class="lead" style="margin-bottom:12px">You pick three things at launch: a <b>market</b> (SOL, BTC or ETH), a <b>side</b> (long or short) and a <b>take-profit tier</b> (Degen, Hyper-Degen or Psycho). Those choices are locked in for the life of the coin.</p></section><section id="d-loop"><h2>The loop</h2><div class="steps">
+<div class="step rv"><i>1</i><div><b>Launch.</b><span>Create the coin on pump.fun through KiloPad. You choose market, side and tier. Creator fees are locked to the treasury in the same transaction.</span></div></div>
+<div class="step rv"><i>2</i><div><b>Fees stack up.</b><span>Every trade of your coin pays creator fees. They collect until they reach $50. Nobody has to deposit extra money.</span></div></div>
+<div class="step rv"><i>3</i><div><b>The position opens.</b><span>$50 of margin opens a $50,000 position at 1000x on Jupiter YOLO, on the side you picked.</span></div></div>
+<div class="step rv"><i>4</i><div><b>Win or bust.</b><span>If price reaches your take profit, the position closes and the profit is used for buybacks and burns. If price moves the other way by 0.1%, the position busts.</span></div></div>
+</div></section><section id="d-launch"><h2>Launching a coin</h2><p class="lead" style="margin-bottom:12px">The launch form asks for a coin name, a ticker, an image, an optional one-line description and an optional initial buy in SOL (up to 5 SOL). Then you choose side, market and tier. A summary box shows exactly what you are committing to before you approve anything.</p><p class="lead" style="margin-bottom:12px">Your image and metadata are pinned to IPFS first. Then your wallet signs the launch transaction. You connect with Phantom, Solflare or Backpack; KiloPad never holds your keys.</p><p class="lead" style="margin-bottom:12px">If you add an initial buy, it is a separate second approval after the coin exists. If that buy fails, the coin is still launched.</p><p class="sub2">Launching is paused whenever the treasury address is not configured, so a coin can never be created without its fees being locked.</p></section><section id="d-fees"><h2>Fee lock</h2><p class="lead" style="margin-bottom:12px">pump.fun lets a coin&#39;s creator fees be split between shareholders. KiloPad launches every coin with a single shareholder: the <b>KiloPad treasury, at 100%</b>, with the admin revoked so the split cannot be changed afterward.</p><ul class="risk"><li><b>One transaction.</b> The launch creates the coin, creates the fee-sharing config and sets the shares to 100% treasury. If that does not fit in one Solana transaction, the page splits it into the fewest steps that fit and asks you to approve each.</li><li><b>Verified on-chain.</b> After launch, the server reads the coin&#39;s fee-sharing account and only lists the coin in Explore if it pays 100% to the treasury and is locked.</li><li><b>Not listed means not locked.</b> If a coin&#39;s fees are not locked to the treasury, it does not appear in Explore and its fees never count toward a position.</li><li><b>You can check it yourself.</b> The treasury address is shown on the launch page and can be checked on pump.fun or Solscan.</li></ul><p class="sub2">This means creators do not receive creator fees from their own KiloPad coins. The fees are the margin for the coin&#39;s position.</p></section><section id="d-position"><h2>The position</h2><p class="lead" style="margin-bottom:12px">When a coin&#39;s collected fees reach $50, that $50 is used as margin for a long or short at 1000x. That is a $50,000 position, on the market and side you chose at launch.</p><p class="lead" style="margin-bottom:12px">At 1000x, a price move of 0.1% against the position wipes out the margin. That is the bust price. The table shows where each demo market busts:</p><div class="tbl"><table><thead><tr><th>MARKET</th><th>DEMO PRICE</th><th>LONG BUSTS AT</th><th>SHORT BUSTS AT</th></tr></thead><tbody>
+<tr><td>SOL</td><td>$104.42</td><td class="r">$104.32</td><td class="r">$104.52</td></tr>
+<tr><td>BTC</td><td>$81,556</td><td class="r">$81,474</td><td class="r">$81,638</td></tr>
+<tr><td>ETH</td><td>$2,422.50</td><td class="r">$2,420.08</td><td class="r">$2,424.92</td></tr></tbody></table></div>
+<p class="sub2">Demo prices are for illustration. Real positions open at the live price when they open. Normal price noise can move 0.1% in seconds.</p></section><section id="d-tiers"><h2>Tiers and odds</h2><p class="lead" style="margin-bottom:12px">The tier sets when the position takes profit, as a multiple of the $50 margin. A bigger tier pays more but needs a bigger price move before the 0.1% bust.</p><div class="tbl"><table><thead><tr><th>TIER</th><th>CLOSES AT</th><th>PRICE MOVE YOUR WAY</th><th>ROUGH ODDS BEFORE BUST</th><th>PROFIT ON $50</th></tr></thead><tbody>
+<tr><td class="a">Degen</td><td>2x margin</td><td>0.1%</td><td>1 in 2</td><td class="g">$50</td></tr>
+<tr><td class="a">Hyper-Degen</td><td>10x margin</td><td>0.9%</td><td>1 in 10</td><td class="g">$450</td></tr>
+<tr><td class="a">Psycho</td><td>100x margin</td><td>9.9%</td><td>1 in 100</td><td class="g">$4,950</td></tr></tbody></table></div>
+<p class="sub2">Odds assume a fair coin flip and ignore fees, spread and slippage, all of which make them worse. They are a rough guide, not a promise.</p></section><section id="d-win"><h2>Win: buyback and burn</h2><p class="lead" style="margin-bottom:12px">When price reaches your take profit, the position closes and the profit is split:</p><ul class="risk"><li><b>80%</b> buys your coin back from the market and burns it. A win means more demand and less supply at the same time.</li><li><b>20%</b> buys back and burns KILOPAD, the platform token.</li></ul><p class="sub2">Example: a Psycho win on $50 margin is $4,950 of profit. $3,960 buys and burns your coin and $990 buys and burns KILOPAD.</p></section><section id="d-bust"><h2>Bust</h2><p class="lead" style="margin-bottom:12px">If price moves 0.1% against the position before it reaches take profit, the position is liquidated and the $50 margin is gone. The coin itself is unaffected: it keeps trading on pump.fun, its fees keep stacking, and once they reach another $50 it gets another position with the same market, side and tier.</p></section><section id="d-explore"><h2>Explore and fee progress</h2><p class="lead" style="margin-bottom:12px">Explore lists every verified coin with its market, side, tier and a progress bar toward $50. When a coin has reached $50 and is waiting for its position to open, the bar turns full and says so. Latest shows launches as they happen.</p><p class="sub2">Fee numbers are read from the coin&#39;s on-chain fee vault. pump.fun pools a creator&#39;s fees across all of their coins, so a creator with several coins can see the same number on each until this is refined.</p></section><section id="d-status"><h2>What is live</h2><ul class="risk"><li><b>Live:</b> launching coins on pump.fun with fees locked to the treasury, the on-chain check, Explore and Latest, and fee progress toward $50.</li><li><b>Not live yet:</b> the bot that opens, monitors and closes positions, and the buyback and burn that follows a win. Positions are not open today.</li><li><b>Third party:</b> positions run on Jupiter YOLO, which is an unaudited beta.</li></ul><p class="sub2">This page describes the design. Anything marked not live is not running, and nothing here is a promise that it will be.</p></section><section id="d-risks"><h2>Risks</h2><ul class="risk"><li><b>Most positions bust.</b> A 0.1% adverse move ends a position. Even the easiest tier is a coin flip before fees and slippage.</li><li><b>Profits can queue or never pay out.</b> They depend on the position bot, Jupiter YOLO and on-chain execution all working.</li><li><b>You give up creator fees.</b> Fees from your coin go to the treasury, permanently.</li><li><b>Smart contract and platform risk.</b> pump.fun, Jupiter YOLO and the wallet and RPC stack can all fail or change.</li><li><b>Memecoins are volatile.</b> Burns reduce supply but do not guarantee price.</li></ul><p class="sub2">Early access. Not financial advice.</p></section><section id="d-faq"><h2>FAQ</h2><div class="steps">
+<div class="step rv"><i>?</i><div><b>Can I change my market, side or tier later?</b><span>No. They are locked in for the life of the coin.</span></div></div>
+<div class="step rv"><i>?</i><div><b>Who gets the creator fees?</b><span>The KiloPad treasury, 100%. That is set on-chain at launch and the admin is revoked.</span></div></div>
+<div class="step rv"><i>?</i><div><b>Does the coin die if the position busts?</b><span>No. It keeps trading and its fees stack toward the next $50.</span></div></div>
+<div class="step rv"><i>?</i><div><b>What is the minimum I need to launch?</b><span>Enough SOL for the launch transaction and fees. The initial buy is optional.</span></div></div>
+<div class="step rv"><i>?</i><div><b>Which wallets work?</b><span>Phantom, Solflare and Backpack.</span></div></div>
+</div></section>
+    <div class="ctas" style="margin-top:34px"><a class="btn fill" href="#/launch">Launch a coin</a><a class="btn" href="#/how">How it works</a></div>
+  </div>
+
+  <footer>
+    <span>KILOPAD · fees go all-in at 1000x · <a href="https://x.com/kilopadsol" target="_blank" rel="noopener" style="color:inherit">@kilopadsol</a></span>
+    <span>Early access. Not financial advice.</span>
+  </footer>
+</div>
+
+  <div class="ov" id="ov" hidden>
+    <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt">
+      <div class="dh"><span id="dt">connect_wallet</span><button class="x" id="dx" aria-label="Close">×</button></div>
+      <div class="db" id="db"></div>
+    </div>
+  </div>
+
+<script>
+var $=function(i){return document.getElementById(i)};
+var WEB3='https://esm.sh/@solana/web3.js@1.98.2';
+var SDK='https://esm.sh/@pump-fun/pump-sdk@4.1.0?deps=@solana/web3.js@1.98.2';
+var NATIVE_MINT='So11111111111111111111111111111111111111112',TOKEN_PROGRAM='TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+var treasury=null,cfgLoaded=false;
+var PUMP='6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P';
+var wallet=$('wallet'),ov=$('ov'),dbx=$('db'),dt=$('dt');
+var acct=null,provider=null,lastFocus=null;
+function short(a){return a.slice(0,4)+'…'+a.slice(-4)}
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function api(path,body){
+  var ac=new AbortController(),tm=setTimeout(function(){ac.abort()},30000);
+  return fetch(path,body===undefined?{signal:ac.signal}:{signal:ac.signal,method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)})
+    .finally(function(){clearTimeout(tm)})
+    .then(function(r){return r.json().then(function(j){if(!r.ok||j.error){var e=j.error,msg=e&&typeof e==='object'?(e.message||JSON.stringify(e)):(e||('HTTP '+r.status));var logs=e&&e.data&&e.data.logs;if(logs&&logs.length)msg+=' | '+logs.slice(-5).join(' | ');throw new Error(msg)}return j})});
+}
+
+/* ---------- wallets (injected providers, no library) ---------- */
+function walletList(){
+  var w=window,list=[];
+  var ph=w.phantom&&w.phantom.solana&&w.phantom.solana.isPhantom?w.phantom.solana:null;
+  list.push({name:'Phantom',p:ph,url:'https://phantom.app'});
+  list.push({name:'Solflare',p:w.solflare&&w.solflare.isSolflare?w.solflare:null,url:'https://solflare.com'});
+  list.push({name:'Backpack',p:w.backpack&&w.backpack.isBackpack?w.backpack:null,url:'https://backpack.app'});
+  var known=list.some(function(x){return x.p===w.solana});
+  if(w.solana&&!known)list.push({name:'Browser wallet',p:w.solana,url:''});
+  return list;
+}
+function renderList(){
+  dt.textContent='connect_wallet';
+  dbx.innerHTML='<p>Choose a Solana wallet.</p>'+walletList().map(function(x,i){
+    return x.p?'<button class="wopt" data-i="'+i+'"><i>'+x.name[0]+'</i><span>'+x.name+'</span><em>detected</em></button>'
+      :'<button class="wopt" disabled><i>'+x.name[0]+'</i><span>'+x.name+'</span><em>not installed</em></button>'}).join('');
+  var f=dbx.querySelector('.wopt:not([disabled])');if(f)f.focus();
+}
+function renderMsg(title,html){dt.textContent=title;dbx.innerHTML=html}
+function renderAcct(){
+  dt.textContent='wallet';
+  dbx.innerHTML='<div class="acct"><div class="a1">Connected</div><div class="a2">'+esc(acct)+'</div></div>'+
+    '<div class="drow"><button class="btn" id="cp">Copy address</button><button class="btn red" id="dc">Disconnect</button></div>';
+  $('cp').onclick=function(){var b=$('cp');var done=function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy address'},1200)};
+    try{navigator.clipboard.writeText(acct).then(done,function(){})}catch(x){}};
+  $('dc').onclick=function(){try{provider&&provider.disconnect&&provider.disconnect()}catch(x){}
+    acct=null;provider=null;wallet.textContent='Connect wallet';closeM();refresh()};
+  $('dc').focus();
+}
+function openM(){lastFocus=document.activeElement;ov.hidden=false;if(acct)renderAcct();else renderList()}
+function closeM(){ov.hidden=true;if(lastFocus&&lastFocus.focus)lastFocus.focus()}
+wallet.onclick=openM;
+$('dx').onclick=closeM;
+ov.addEventListener('mousedown',function(e){if(e.target===ov)closeM()});
+addEventListener('keydown',function(e){if(e.key==='Escape'&&!ov.hidden)closeM()});
+dbx.addEventListener('click',function(e){
+  var b=e.target.closest&&e.target.closest('.wopt');if(!b||b.disabled)return;
+  var x=walletList()[Number(b.dataset.i)];
+  renderMsg('connecting','<div class="cn">Connecting to '+x.name+'…<span class="cur"></span></div><p>Approve the request in your wallet.</p>');
+  Promise.resolve(x.p.connect()).then(function(r){
+    var pk=(r&&r.publicKey)||x.p.publicKey;if(!pk)throw new Error('No account returned.');
+    acct=pk.toString();provider=x.p;wallet.textContent=short(acct);closeM();refresh();
+  }).catch(function(err){
+    renderMsg('connect_failed','<p>'+esc(err&&err.message||'Connection was cancelled.')+'</p><button class="btn" id="rt">Try again</button>');
+    $('rt').onclick=renderList;
+  });
+});
+
+/* ---------- launch form ---------- */
+var side='long',tpx=2,sym='SOL',imgData=null,busy=false;
+var TIER={2:'Degen',10:'Hyper-Degen',100:'Psycho'};
+var PRICE={SOL:'…',BTC:'…',ETH:'…'};
+var nm=$('nm'),tk=$('tk'),ok=$('ok'),go=$('go'),found=$('found'),buy=$('db2');
+function pressed(sel,fn){document.querySelectorAll(sel).forEach(function(b){b.setAttribute('aria-pressed',fn(b))})}
+function buyVal(){var n=Number(String(buy.value).replace(',','.'));return isFinite(n)&&n>=0&&n<=5?n:null}
+function refresh(){
+  var v=side;
+  pressed('#sl,#ss',function(b){return (b.id==='sl')===(side==='long')});
+  pressed('.mk button',function(b){return b.dataset.sym===sym});
+  pressed('.tp button',function(b){return Number(b.dataset.x)===tpx});
+  document.querySelectorAll('.mk button').forEach(function(b){b.querySelector('span').textContent=PRICE[b.dataset.sym]});
+  var mv=((tpx-1)/10).toFixed(1);
+  $('tpnote').innerHTML=TIER[tpx]+': closes and burns when the position is worth <b>'+tpx+'x</b> its margin, a move of about <b>'+mv+'%</b> your way. Roughly <b>1 in '+tpx+'</b> positions get there before the 0.1% bust, before fees and slippage.';
+  var t=tk.value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'')||'TICKER',n=nm.value.trim()||'Coin name';
+  $('sum').innerHTML='<span class="t">$'+esc(t)+'</span> · '+esc(n)+'<br>'+v+' '+sym+' at 1000x · '+TIER[tpx]+' '+tpx+'x<br><span class="d">opens at $50 in fees · profit: 80% burns your coin, 20% burns KILOPAD</span>';
+  go.disabled=busy||!(ok.checked&&nm.value.trim()&&tk.value.trim()&&imgData&&buyVal()!==null);
+  go.textContent=!cfgLoaded?'Loading…':!treasury?'Launching is paused':acct?'Launch coin':'Connect wallet to launch';
+  if(cfgLoaded&&!treasury)go.disabled=true;
+}
+$('sl').onclick=function(){side='long';refresh()};$('ss').onclick=function(){side='short';refresh()};
+document.querySelectorAll('.mk button').forEach(function(b){b.onclick=function(){sym=b.dataset.sym;refresh()}});
+document.querySelectorAll('.tp button').forEach(function(b){b.onclick=function(){tpx=Number(b.dataset.x);refresh()}});
+[nm,tk,ok,buy].forEach(function(e){e.addEventListener('input',refresh);e.addEventListener('change',refresh)});
+$('img').addEventListener('change',function(e){
+  var f=e.target.files&&e.target.files[0];imgData=null;$('thumb').style.backgroundImage='';
+  if(!f){refresh();return}
+  if(f.size>1000000){found.innerHTML='<span class="err">Image must be under 1 MB.</span>';e.target.value='';refresh();return}
+  found.textContent='';
+  var r=new FileReader();r.onload=function(){imgData=r.result;$('thumb').style.backgroundImage='url('+r.result+')';refresh()};r.readAsDataURL(f);
+});
+function say(html){found.innerHTML=html}
+function b64(u8){var s='';for(var i=0;i<u8.length;i+=8192)s+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));return btoa(s)}
+function unb64(t){return Uint8Array.from(atob(t),function(c){return c.charCodeAt(0)})}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
+function rpc(method,params){return api('/api/rpc',{jsonrpc:'2.0',id:1,method:method,params:params}).then(function(j){if(j.error)throw new Error(j.error.message||'RPC error');return j.result})}
+
+var COMPUTE_UNITS=600000,PRIORITY_MICROLAMPORTS=100000,MAX_TX_BYTES=1232;
+function withTimeout(p,ms,msg){return new Promise(function(res,rej){var t=setTimeout(function(){rej(new Error(msg))},ms);Promise.resolve(p).then(function(v){clearTimeout(t);res(v)},function(e){clearTimeout(t);rej(e)})})}
+async function submit(tx,label){
+  var hint=setTimeout(function(){say((label||'Approve in your wallet')+'… No popup? Click your wallet extension icon: the request may be waiting there.')},8000);
+  var signed;
+  try{signed=await withTimeout(provider.signTransaction(tx),180000,'Your wallet did not respond. Open your wallet extension, reject any pending request, then try again.')}
+  finally{clearTimeout(hint)}
+  say('Sending to the network…');
+  var sig=null,raw=b64(signed.serialize());
+  for(var k=0;k<5&&!sig;k++){
+    try{sig=await rpc('sendTransaction',[raw,{encoding:'base64',maxRetries:5,preflightCommitment:'confirmed'}])}
+    catch(es){
+      if(k<4&&/Blockhash not found/i.test(String(es&&es.message))){await sleep(1500);continue}
+      throw es;
+    }
+  }
+  for(var i=0;i<40;i++){
+    await sleep(1500);
+    var st=await rpc('getSignatureStatuses',[[sig],{searchTransactionHistory:false}]);
+    var s0=st&&st.value&&st.value[0];
+    if(s0&&s0.err)throw new Error('The transaction failed on-chain.');
+    if(s0&&(s0.confirmationStatus==='confirmed'||s0.confirmationStatus==='finalized'))return sig;
+  }
+  throw new Error('Not confirmed yet. Check '+sig.slice(0,8)+'… on a block explorer.');
+}
+async function buildTx(W,ixs){
+  var bh=await rpc('getLatestBlockhash',[{commitment:'confirmed'}]);
+  var cb=[W.ComputeBudgetProgram.setComputeUnitLimit({units:COMPUTE_UNITS}),W.ComputeBudgetProgram.setComputeUnitPrice({microLamports:PRIORITY_MICROLAMPORTS})];
+  var msg=new W.TransactionMessage({payerKey:new W.PublicKey(acct),recentBlockhash:bh.value.blockhash,instructions:cb.concat(ixs)}).compileToV0Message();
+  return new W.VersionedTransaction(msg);
+}
+async function launch(){
+  if(!acct){openM();return}
+  if(!treasury)return;
+  busy=true;refresh();
+  var mintAddr=null;
+  try{
+    var name=nm.value.trim(),symbol=tk.value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if(!symbol)throw new Error('Ticker needs letters or numbers.');
+    say('1/4 Uploading image and metadata…');
+    var up=await api('/api/upload',{name:name,symbol:symbol,description:$('ds').value.trim(),image:imgData});
+    say('2/4 Loading Solana tools…');
+    var W=await import(WEB3),S=await import(SDK);
+    var mint=W.Keypair.generate();mintAddr=mint.publicKey.toBase58();
+    var me=new W.PublicKey(acct);
+    var ixCreate=await S.PUMP_SDK.createV2Instruction({mint:mint.publicKey,name:name,symbol:symbol,uri:up.uri,creator:me,user:me,mayhemMode:false});
+    var ixCfg=await S.PUMP_SDK.createFeeSharingConfig({creator:me,mint:mint.publicKey,pool:null});
+    var ixUpd=await S.PUMP_SDK.updateFeeSharesV2({authority:me,mint:mint.publicKey,currentShareholders:[me],
+      newShareholders:[{address:new W.PublicKey(treasury),shareBps:10000}],quoteMint:new W.PublicKey(NATIVE_MINT),quoteTokenProgram:new W.PublicKey(TOKEN_PROGRAM)});
+    /* One transaction if it fits Solana's size limit (1232 bytes), else split into the fewest steps that fit. */
+    var fits=function(t){try{return t.serialize().length<=MAX_TX_BYTES}catch(e){return false}};
+    var groups=[[ixCreate,ixCfg,ixUpd]];
+    if(!fits(await buildTx(W,groups[0]))){
+      groups=fits(await buildTx(W,[ixCfg,ixUpd]))?[[ixCreate],[ixCfg,ixUpd]]:[[ixCreate],[ixCfg],[ixUpd]];
+    }
+    var sig=null;
+    for(var gi=0;gi<groups.length;gi++){
+      say(gi===0?'3/4 Approve the launch in your wallet…':'3/4 Approve step '+(gi+1)+' of '+groups.length+' (locks the coin\'s fees to the treasury)…');
+      say('Preparing step '+(gi+1)+' of '+groups.length+'…');
+      var gtx=await buildTx(W,groups[gi]);
+      say(gi===0?'3/4 Approve the launch in your wallet…':'3/4 Approve step '+(gi+1)+' of '+groups.length+' (locks the coin\'s fees to the treasury)…');
+      if(gi===0)gtx.sign([mint]);
+      try{
+        var gs=await submit(gtx,gi===0?'3/4 Approve the launch in your wallet':'3/4 Approve step '+(gi+1)+' of '+groups.length);
+        if(gi===0)sig=gs;
+      }catch(eg){
+        if(gi===0)throw eg;
+        throw new Error('Your coin was created, but its fees could not be locked to the treasury, so it will not be listed. '+(eg&&eg.message||'')+' Mint: '+mintAddr);
+      }
+    }
+    say('4/4 Checking the fee settings on-chain…');
+    var cfgPk=S.feeSharingConfigPda(mint.publicKey);
+    var vault=W.PublicKey.findProgramAddressSync([new TextEncoder().encode('creator-vault'),cfgPk.toBytes()],new W.PublicKey(PUMP))[0].toBase58();
+    await api('/api/launch/confirm',{mint:mintAddr,creator:acct,vault:vault,sharingConfig:cfgPk.toBase58(),signature:sig,name:name,symbol:symbol,uri:up.uri,image:up.image,market:sym,side:side,tier:tpx});
+    var links='<a href="https://pump.fun/coin/'+mintAddr+'" target="_blank" rel="noopener">View on pump.fun</a> · <a href="#explore" id="toex">See it in Explore</a>';
+    loadCoins();
+    var amt=buyVal(),note='';
+    if(amt>0){
+      try{
+        say('Launched. Approve your initial buy of '+amt+' SOL in your wallet…');
+        var bt=await api('/api/launch/buy',{publicKey:acct,mint:mintAddr,amountSol:amt});
+        await submit(W.VersionedTransaction.deserialize(unb64(bt.tx)));
+      }catch(eb){note=' <span class="err">Initial buy did not go through: '+esc(eb&&eb.message||'failed')+'</span>'}
+    }
+    say('<span class="g">Launched.</span> '+links+note);
+    $('toex').onclick=function(){location.hash='#explore'};
+  }catch(err){
+    try{console.error('launch failed',err)}catch(x){}
+    say('<span class="err">'+esc(err&&err.message||'Launch failed.')+'</span>');
+  }finally{busy=false;refresh()}
+}
+go.onclick=launch;
+
+/* ---------- explore ---------- */
+function ago(t){var s=Math.max(1,Math.round((Date.now()-t)/1000));if(s<60)return s+'s';if(s<3600)return Math.round(s/60)+'m';if(s<86400)return Math.round(s/3600)+'h';return Math.round(s/86400)+'d'}
+function fmtPrice(k,v){return k==='BTC'?'$'+Math.round(v).toLocaleString('en-US'):'$'+v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',')}
+function loadCoins(){
+  api('/api/coins').then(function(d){
+    if(d.prices){['SOL','BTC','ETH'].forEach(function(k){if(d.prices[k])PRICE[k]=fmtPrice(k,d.prices[k])});refresh()}
+    var cards=$('cards'),feed=$('feed');
+    if(!d.coins.length){
+      cards.innerHTML='<p class="d">No coins yet. <a href="#/launch" style="color:var(--green)">Launch the first one.</a></p>';
+      feed.innerHTML='<p class="d">Nothing yet.</p>';return;
+    }
+    cards.innerHTML=d.coins.slice(0,12).map(function(c){
+      var usd=c.feeUsd,pct=usd==null?0:Math.min(100,Math.round(usd/d.thresholdUsd*100));
+      var line=usd==null?'fees loading':'$'+usd.toFixed(2)+' of $'+d.thresholdUsd+' · '+(c.ready?'ready, waiting for YOLO':pct+'% to open');
+      var bar=c.ready?'width:100%;background:var(--amber)':'width:'+pct+'%';
+      var av=c.image?'<img class="av" alt="" src="'+esc(c.image)+'" loading="lazy" onerror="this.remove()">':'';
+      return '<a class="card" href="https://pump.fun/coin/'+esc(c.mint)+'" target="_blank" rel="noopener"><div class="top"><b>'+av+'$'+esc(c.symbol)+'</b><span class="tag a">'+esc(TIER[c.tier].toUpperCase())+' '+c.tier+'x</span></div>'+
+        '<div class="meta">1000x '+esc(c.side)+' · '+esc(c.market)+'</div><div class="bar"><i style="'+bar+'"></i></div><div class="to">'+esc(line)+'</div></a>';
+    }).join('');
+    feed.innerHTML=d.coins.slice(0,8).map(function(c){
+      return '<div class="line"><span class="t">'+ago(c.createdAt)+'</span><span class="e g">LAUNCH</span><span class="n">$'+esc(c.symbol)+' · '+esc(c.market)+' '+esc(c.side)+'</span><span class="v d">'+esc(TIER[c.tier])+' '+c.tier+'x</span></div>';
+    }).join('');
+  }).catch(function(){$('cards').innerHTML='<p class="d">Could not load coins.</p>';$('feed').innerHTML=''});
+}
+api('/api/config').then(function(c){treasury=c.treasury;cfgLoaded=true;
+  if(treasury){$('tnote').innerHTML='Creator fees from this coin go to the KILOPAD treasury: <a class="addr" href="https://solscan.io/account/'+esc(treasury)+'" target="_blank" rel="noopener">'+esc(treasury)+'</a>. That is set on-chain in the same transaction as your launch and cannot be changed afterward. You can check it on pump.fun or Solscan.'}
+  refresh()}).catch(function(){cfgLoaded=true;refresh()});
+refresh();loadCoins();setInterval(loadCoins,30000);
+
+/* ---------- routing ---------- */
+function route(){
+  var h=location.hash;
+  var page=h==='#/launch'?'launch':h==='#/how'?'how':h.indexOf('#/docs')===0?'docs':'home';
+  ['home','launch','how','docs'].forEach(function(p){$('p-'+p).hidden=(p!==page)});
+  if(page==='docs'&&h.length>7){var de=document.getElementById('d-'+h.slice(7));if(de){de.scrollIntoView();return}}
+  if(page!=='home'){window.scrollTo(0,0)}
+  else if(h&&h.length>1){var el=document.getElementById(h.slice(1));if(el)el.scrollIntoView()}
+  else window.scrollTo(0,0);
+}
+addEventListener('hashchange',route);route();
+</script>
+
+<script>
+(function(){
+var rm=matchMedia('(prefers-reduced-motion:reduce)').matches;
+/* ticker */
+var items=['<b>DEGEN</b> 2x','<b>HYPER-DEGEN</b> 10x','<b>PSYCHO</b> 100x','SOL','BTC','ETH','LONG or SHORT','a win burns supply','fees go all-in at <b>1000x</b>','$50 margin, $50,000 position'];
+var tk=document.getElementById('tick');if(tk){var h=items.map(function(x){return '<span>'+x+'</span>'}).join('');tk.innerHTML=h+h+h+h}
+/* reveal + count up */
+function fmt(n,p,s){return (p||'')+Math.round(n).toLocaleString('en-US')+(s||'')}
+function count(el){var n=+el.dataset.n,p=el.dataset.p,s=el.dataset.s;if(rm){el.textContent=fmt(n,p,s);return}var t0=performance.now();(function f(t){var k=Math.min(1,(t-t0)/1400),e=1-Math.pow(1-k,3);el.textContent=fmt(n*e,p,s);if(k<1)requestAnimationFrame(f)})(t0)}
+var io=new IntersectionObserver(function(es){es.forEach(function(e){if(!e.isIntersecting)return;e.target.classList.add('in');var b=e.target.querySelector&&e.target.querySelector('b[data-n]');if(b)count(b);io.unobserve(e.target)})},{threshold:.15});
+function watch(){document.querySelectorAll('.rv:not(.in)').forEach(function(el,i){if(el.parentElement&&el.parentElement.classList.contains('steps'))el.style.setProperty('--d',(Array.prototype.indexOf.call(el.parentElement.children,el)*.08)+'s');io.observe(el)})}
+watch();addEventListener('hashchange',function(){setTimeout(watch,50)});
+/* demo loop */
+var $=function(i){return document.getElementById(i)};
+var dv=$('dv'),dbar=$('dbar'),dpos=$('dpos'),dpath=$('dpath'),ddot=$('ddot'),dres=$('dres'),dbig=$('dbig'),dsm=$('dsm');
+if(!dv)return;
+var round=0;
+var WIN='M0 70 L30 64 L55 76 L85 60 L112 68 L140 52 L170 58 L200 44 L232 50 L262 36 L300 40 L330 26';
+var BUST='M0 70 L30 64 L55 74 L85 62 L112 72 L140 66 L170 80 L200 74 L232 92 L262 86 L300 100 L330 108';
+function set(on,win){dres.className='dres'+(on?' on '+(win?'win':'bust'):'')}
+function end(win){set(true,win);dbig.textContent=win?'WIN':'BUST';dsm.textContent=win?'80% burns your coin. 20% burns KILOPAD.':'Margin gone. Fees start stacking again.'}
+function reset(){dv.textContent='$0.00';dbar.style.transition='none';dbar.style.width='0';dpos.classList.remove('on');set(false);dpath.style.transition='none';dpath.style.strokeDashoffset='1';ddot.style.opacity=0;$('dtitle').textContent='one coin, one bet'}
+function final(win){dv.textContent='$50.00';dbar.style.width='100%';dpos.classList.add('on');dpath.setAttribute('d',win?WIN:BUST);dpath.style.strokeDashoffset='0';var e=win?[330,26]:[330,108];ddot.setAttribute('cx',e[0]);ddot.setAttribute('cy',e[1]);ddot.style.opacity=1;end(win)}
+if(rm){final(true);return}
+function run(){
+  var win=(round++%2)===0;reset();
+  var T=[];function at(ms,f){T.push(setTimeout(f,ms))}
+  at(300,function(){$('dtitle').textContent='1. fees stack up';dbar.style.transition='width 2.4s cubic-bezier(.3,.6,.3,1)';dbar.style.width='100%';var t0=performance.now();(function f(t){var k=Math.min(1,(t-t0)/2400);dv.textContent='$'+(50*(1-Math.pow(1-k,3))).toFixed(2);if(k<1)requestAnimationFrame(f)})(t0)});
+  at(2900,function(){$('dtitle').textContent='2. position opens';dpos.classList.add('on')});
+  at(3700,function(){$('dtitle').textContent='3. price moves';dpath.setAttribute('d',win?WIN:BUST);dpath.getBoundingClientRect();dpath.style.transition='stroke-dashoffset 2.6s linear';dpath.style.strokeDashoffset='0';var e=win?[330,26]:[330,108];ddot.setAttribute('cx',e[0]);ddot.setAttribute('cy',e[1]);setTimeout(function(){ddot.style.opacity=1},2500)});
+  at(6500,function(){$('dtitle').textContent=win?'4. take profit, burn':'4. bust';end(win)});
+  at(10500,run);
+}
+run();
+})();
+</script>
+</body>
+</html>
