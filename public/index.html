@@ -486,7 +486,6 @@ html,body{overflow-x:clip}
         <div class="sum" id="sum" aria-live="polite"></div>
 
         <div class="note" id="tnote">Creator fees from this coin go to the KILOPAD treasury. That is set on-chain in the same transaction as your launch and cannot be changed afterward.</div>
-        <label class="chk"><input type="checkbox" id="ok"><span>I understand that positions are not live yet, that Jupiter YOLO is an unaudited beta, and that profits can queue or never pay out.</span></label>
         <div class="go"><button class="btn fill" id="go" disabled>Launch coin</button></div>
         <div class="found" id="found" aria-live="polite"></div>
       </div>
@@ -664,7 +663,7 @@ dbx.addEventListener('click',function(e){
 var side='long',tpx=2,sym='SOL',imgData=null,busy=false;
 var TIER={2:'Degen',10:'Hyper-Degen',100:'Psycho'};
 var PRICE={SOL:'…',BTC:'…',ETH:'…'};
-var nm=$('nm'),tk=$('tk'),ok=$('ok'),go=$('go'),found=$('found'),buy=$('db2');
+var nm=$('nm'),tk=$('tk'),go=$('go'),found=$('found'),buy=$('db2');
 function pressed(sel,fn){document.querySelectorAll(sel).forEach(function(b){b.setAttribute('aria-pressed',fn(b))})}
 function buyVal(){var n=Number(String(buy.value).replace(',','.'));return isFinite(n)&&n>=0&&n<=5?n:null}
 function refresh(){
@@ -677,14 +676,14 @@ function refresh(){
   $('tpnote').innerHTML=TIER[tpx]+': closes and burns when the position is worth <b>'+tpx+'x</b> its margin, a move of about <b>'+mv+'%</b> your way. Roughly <b>1 in '+tpx+'</b> positions get there before the 0.1% bust, before fees and slippage.';
   var t=tk.value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'')||'TICKER',n=nm.value.trim()||'Coin name';
   $('sum').innerHTML='<span class="t">$'+esc(t)+'</span> · '+esc(n)+'<br>'+v+' '+sym+' at 1000x · '+TIER[tpx]+' '+tpx+'x<br><span class="d">opens at $50 in fees · profit: 80% burns your coin, 20% burns KILOPAD</span>';
-  go.disabled=busy||!(ok.checked&&nm.value.trim()&&tk.value.trim()&&imgData&&buyVal()!==null);
+  go.disabled=busy||!(nm.value.trim()&&tk.value.trim()&&imgData&&buyVal()!==null);
   go.textContent=!cfgLoaded?'Loading…':!treasury?'Launching is paused':acct?'Launch coin':'Connect wallet to launch';
   if(cfgLoaded&&!treasury)go.disabled=true;
 }
 $('sl').onclick=function(){side='long';refresh()};$('ss').onclick=function(){side='short';refresh()};
 document.querySelectorAll('.mk button').forEach(function(b){b.onclick=function(){sym=b.dataset.sym;refresh()}});
 document.querySelectorAll('.tp button').forEach(function(b){b.onclick=function(){tpx=Number(b.dataset.x);refresh()}});
-[nm,tk,ok,buy].forEach(function(e){e.addEventListener('input',refresh);e.addEventListener('change',refresh)});
+[nm,tk,buy].forEach(function(e){e.addEventListener('input',refresh);e.addEventListener('change',refresh)});
 $('img').addEventListener('change',function(e){
   var f=e.target.files&&e.target.files[0];imgData=null;$('thumb').style.backgroundImage='';
   if(!f){refresh();return}
