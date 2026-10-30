@@ -749,9 +749,10 @@ async function launch(){
       newShareholders:[{address:new W.PublicKey(treasury),shareBps:10000}],quoteMint:new W.PublicKey(NATIVE_MINT),quoteTokenProgram:new W.PublicKey(TOKEN_PROGRAM)});
     /* One transaction if it fits Solana's size limit (1232 bytes), else split into the fewest steps that fit. */
     var fits=function(t){try{return t.serialize().length<=MAX_TX_BYTES}catch(e){return false}};
+    /* create and create_fee_sharing_config must share a transaction when possible: if trades land between them, the creator fees are unswept and pump refuses to move the creator (CreatorFeesNotSwept). */
     var groups=[[ixCreate,ixCfg,ixUpd]];
     if(!fits(await buildTx(W,groups[0]))){
-      groups=fits(await buildTx(W,[ixCfg,ixUpd]))?[[ixCreate],[ixCfg,ixUpd]]:[[ixCreate],[ixCfg],[ixUpd]];
+      groups=fits(await buildTx(W,[ixCreate,ixCfg]))?[[ixCreate,ixCfg],[ixUpd]]:[[ixCreate],[ixCfg],[ixUpd]];
     }
     var sig=null;
     for(var gi=0;gi<groups.length;gi++){
